@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.log
+nohup.out
+results_*.zip
+results_skidpad.txt
+
+# keep the summary, the reference route and the final figures; per-run traces are large
+results/*
+!results/summary.csv
+!results/reference_town03.npz
+!results/final/

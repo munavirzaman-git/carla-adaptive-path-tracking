@@ -1,0 +1,9 @@
+# CARLA client must match the server version (0.9.16). The pip wheel does not include
+# agents.navigation: set CARLA_ROOT so PythonAPI/carla is importable.
+carla==0.9.16
+numpy>=1.24
+pandas>=2.0
+matplotlib>=3.7
+networkx>=3.0
+shapely>=2.0
+tabulate>=0.9
