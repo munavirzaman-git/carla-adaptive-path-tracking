@@ -43,7 +43,9 @@ def get_reference(world, args):
     return path
 
 
-def run_one(world, path, ctrl_name, sc, rng, spectator=False, gains=None):
+def run_one(world, path, ctrl_name, sc, rng, spectator=False, gains=None, hook=None):
+    """One run. hook(vehicle, state, row, info) is called every control step (used by
+    record_demo.py to attach a camera); returning True stops the run early."""
     world.set_weather(getattr(carla.WeatherParameters, sc.weather))
     vprof = path.speed_profile(sc.v_max_kmh / 3.6, sc.a_lat_max)
     veh = spawn_vehicle(world, C.VEHICLE_BP, path.x[0], path.y[0], path.z[0], path.psi[0])
@@ -92,6 +94,9 @@ def run_one(world, path, ctrl_name, sc, rng, spectator=False, gains=None):
                              theta=info.get("theta", np.nan), sigma=info.get("sigma", np.nan)))
             if spectator:
                 follow_spectator(world, veh)
+            if hook is not None and hook(veh, st, rows[-1], info):
+                status = "stopped"
+                break
             if idx_t >= path.n - 8:
                 status = "completed"
                 break

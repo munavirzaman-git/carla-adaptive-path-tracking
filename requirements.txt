@@ -7,3 +7,7 @@ matplotlib>=3.7
 networkx>=3.0
 shapely>=2.0
 tabulate>=0.9
+# media (make_animations.py, record_demo.py)
+pillow>=10.0
+imageio>=2.31
+imageio-ffmpeg>=0.4.9

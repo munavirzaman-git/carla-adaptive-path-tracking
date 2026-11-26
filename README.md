@@ -1,36 +1,101 @@
-# Adaptive Vehicle Path Tracking in CARLA
+<p align="center">
+  <img src="media/banner.png" alt="Adaptive Vehicle Path Tracking in CARLA" width="100%">
+</p>
 
-Pure Pursuit, Stanley and a delay-robust **direct Model Reference Adaptive Controller (MRAC)**
-compared on a Tesla Model 3 in CARLA 0.9.16 (Town03), across 14 road and driving conditions.
+<p align="center">
+  <img src="https://img.shields.io/badge/CARLA-0.9.16-4C9BE8?style=for-the-badge" alt="CARLA 0.9.16">
+  <img src="https://img.shields.io/badge/Python-3.12-FF9F1C?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.12">
+  <img src="https://img.shields.io/badge/Ubuntu-24.04-FF5E78?style=for-the-badge&logo=ubuntu&logoColor=white" alt="Ubuntu 24.04">
+  <img src="https://img.shields.io/badge/scenarios-14-2EC4B6?style=for-the-badge" alt="14 scenarios">
+  <img src="https://img.shields.io/badge/license-MIT-7BD389?style=for-the-badge" alt="MIT license">
+</p>
 
-The adaptive controller learns one parameter online, the vehicle's effective steering gain, and
-is derived with a Lyapunov argument. The study asks a simple question: **when is online
-adaptation worth it compared with well-tuned geometric controllers?**
+<p align="center">
+  <b>Pure Pursuit</b> &nbsp;·&nbsp; <b>Stanley</b> &nbsp;·&nbsp; <b>delay-robust direct MRAC</b>
+  &nbsp;|&nbsp; Tesla Model 3 &nbsp;·&nbsp; Town03 &nbsp;·&nbsp; 14 road and driving conditions
+  <br>
+  <a href="#-demos">Demos</a> ·
+  <a href="#-key-findings">Findings</a> ·
+  <a href="#-results">Results</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-getting-started">Getting started</a> ·
+  <a href="docs/METHOD.md">Method</a>
+</p>
 
-![Value of online adaptation](results/final/fig2_adaptation_value.png)
+---
 
-## Key findings
+The adaptive controller learns one parameter online, the car's **effective steering gain**, and
+is derived with a Lyapunov argument. The study asks one question: **when is online adaptation
+worth it compared with well-tuned geometric controllers?**
 
-- **Adaptation pays in proportion to plant change.** The error reduction from adapting
-  correlates strongly with how far the adapted gain moved from its dry-road calibration
-  (r = −0.93 for MRAC-R over the 12 default-grip scenarios). Where the steering response
-  changed most (steering-map error, reduced grip at high lateral demand, combined degradation),
-  MRAC beat Stanley by **21–34 %** RMS cross-track error.
-- **Stanley wins when the vehicle matches its calibration.** In 9 of 14 scenarios Stanley had
-  the lowest error; MRAC was up to 60 % worse there.
-- **Plain high-gain MRAC is fragile to delay.** With 150 ms actuator delay and sensor noise it
-  left the route and its gain estimate drifted to 2.4× the true value. A Stanley-type sliding
-  surface, a gain cap and filtered adaptation fixed it.
-- **Feedback linearisation fails at the friction limit.** Near peak tyre force every MRAC
-  variant left the road, while Stanley and Pure Pursuit stayed on with large errors.
-- **CARLA's default grip is about 2.2 g.** A skid-pad test maps CARLA's `tire_friction` to
-  measured lateral grip; realistic wet and snow settings were not drivable on Town03.
+> [!TIP]
+> **Answer: in proportion to how far the vehicle moves from its calibration.** Where the steering
+> response changed most, MRAC beat Stanley by **21–34 %** RMS cross-track error. Where nothing
+> changed, Stanley won.
 
-All numbers below come from `results/summary.csv`; nothing is extrapolated.
+## 🎬 Demos
 
-## Results
+<p align="center">
+  <img src="media/gifs/combined_chase_side_by_side.gif" alt="Stanley vs MRAC-RP, combined degradation" width="100%">
+  <br><sub><b>combined</b> (low grip + load + steering-map error + noise + delay): Stanley (left) vs MRAC-RP (right).
+  The HUD bar shows live cross-track error.</sub>
+</p>
 
-RMS / max cross-track error in metres (vehicle centre, ground truth). **Bold** = lowest RMS.
+<table>
+  <tr>
+    <td width="50%"><img src="media/gifs/noisy_delayed_chase_side_by_side.gif" alt="delay robustness"><br>
+      <sub>🔴 <b>150 ms delay + noise</b>: the original high-gain MRAC oscillates and spins; the delay-robust MRAC-R stays on the line.</sub></td>
+    <td width="50%"><img src="media/gifs/dry_real_push_top_side_by_side.gif" alt="friction limit"><br>
+      <sub>⚠️ <b>At the friction limit</b> (μ ≈ 0.9, 0.4 g demand): Stanley survives, MRAC runs out of grip and leaves the road.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="media/gifs/steer_map_error_chase_side_by_side.gif" alt="steering-map error"><br>
+      <sub>🟢 <b>Unknown steering gain</b>: CARLA's speed-dependent steering reduction. MRAC-R learns it; Stanley's error triples relative to nominal.</sub></td>
+    <td width="50%"><img src="media/gifs/adaptation.gif" alt="theta adaptation"><br>
+      <sub>📈 <b>What the adaptation learns</b>: θ̂ climbs where the car turns less than calibrated.</sub></td>
+  </tr>
+</table>
+
+<details>
+<summary><b>▶ Full-length videos (MP4)</b></summary>
+
+| Scenario | View | Side by side | Individual runs |
+| --- | --- | --- | --- |
+| combined | chase | [▶ video](media/videos/combined_chase_side_by_side.mp4) | [Stanley](media/videos/combined_chase_stanley.mp4) · [MRAC-RP](media/videos/combined_chase_adaptive_mrac_rob_prev.mp4) |
+| steer_map_error | chase | [▶ video](media/videos/steer_map_error_chase_side_by_side.mp4) | [Stanley](media/videos/steer_map_error_chase_stanley.mp4) · [MRAC-R](media/videos/steer_map_error_chase_adaptive_mrac_rob.mp4) |
+| noisy_delayed | chase | [▶ video](media/videos/noisy_delayed_chase_side_by_side.mp4) | [high-gain MRAC](media/videos/noisy_delayed_chase_adaptive_mrac_cal.mp4) · [MRAC-R](media/videos/noisy_delayed_chase_adaptive_mrac_rob.mp4) |
+| dry_real_push | top | [▶ video](media/videos/dry_real_push_top_side_by_side.mp4) | [Stanley](media/videos/dry_real_push_top_stanley.mp4) · [MRAC-RP](media/videos/dry_real_push_top_adaptive_mrac_rob_prev.mp4) |
+| nominal | top | – | [MRAC-RP](media/videos/nominal_top_adaptive_mrac_rob_prev.mp4) |
+
+</details>
+
+<p align="center">
+  <img src="media/gifs/tracking_combined.gif" alt="tracking animation from logged data" width="100%">
+  <br><sub>Replay of the logged runs: position on the route, cross-track error and steering for three controllers.</sub>
+</p>
+
+## 💡 Key findings
+
+| | Finding |
+| --- | --- |
+| 📈 | **Adaptation pays in proportion to plant change.** The error reduction from adapting correlates with how far θ̂ moved from its dry-road calibration (**r = −0.93** for MRAC-R over the 12 default-grip scenarios). |
+| 🏆 | **Stanley wins when the car matches its calibration**: lowest error in 9 of 14 scenarios; MRAC was up to 60 % worse there. |
+| 🔧 | **Plain high-gain MRAC is fragile to delay.** With 150 ms delay and noise it left the route and θ̂ drifted to 2.4× its true value. A Stanley-type surface, a gain cap and filtered adaptation fixed it. |
+| ⚠️ | **Feedback linearisation fails at the friction limit.** Near peak tyre force every MRAC variant left the road; Stanley and Pure Pursuit stayed on. |
+| 🛞 | **CARLA's default grip is about 2.2 g.** A skid-pad test maps `tire_friction` to measured grip; realistic wet and snow settings were not drivable on Town03. |
+
+<p align="center">
+  <img src="results/final/fig2_adaptation_value.png" alt="Value of online adaptation" width="62%">
+</p>
+
+## 📊 Results
+
+<p align="center">
+  <img src="media/scoreboard.png" alt="Scoreboard heatmap" width="70%">
+</p>
+
+<details>
+<summary><b>Full table: RMS / max cross-track error [m]</b> (bold = lowest RMS)</summary>
 
 | Scenario | Pure Pursuit | Stanley | MRAC-R | MRAC-RP |
 | --- | --- | --- | --- | --- |
@@ -49,41 +114,68 @@ RMS / max cross-track error in metres (vehicle centre, ground truth). **Bold** =
 | dry_real (μ ≈ 0.9) | 0.318 / 1.000 | 0.186 / 0.656 | 0.225 / 0.998 | **0.170** / 0.813 |
 | dry_real_push | **0.634** / 2.114 | 0.799 / 2.550 | left road at 24 % | left road at 29 % |
 
-Three noise seeds change RMS error by at most 0.002 m (e.g. combined: Stanley 0.190 ± 0.001,
-MRAC-RP 0.124 ± 0.001), far below the gaps between controllers. MRAC steers more actively:
-13–20 °/s RMS steering rate in clean runs against 9–13 °/s for Stanley, and 82 °/s against
-38 °/s in `noisy_delayed`.
+Three noise seeds change RMS error by at most 0.002 m (combined: Stanley 0.190 ± 0.001,
+MRAC-RP 0.124 ± 0.001). MRAC steers more actively: 13–20 °/s RMS in clean runs vs 9–13 °/s for
+Stanley, and 82 vs 38 °/s in `noisy_delayed`. All numbers come from
+[`results/summary.csv`](results/summary.csv); full tables in
+[`results/final/tables.md`](results/final/tables.md).
+</details>
 
-| Figure | Shows |
+<details>
+<summary><b>All analysis figures</b></summary>
+
+| | |
 | --- | --- |
-| [fig1](results/final/fig1_error_by_scenario.png) | RMS and max error per scenario (hatched = left the road) |
-| [fig2](results/final/fig2_adaptation_value.png) | Error change from adapting vs. shift of θ̂ from calibration |
-| [fig3](results/final/fig3_theta_hat.png) | Adapted gain θ̂ along the route |
-| [fig4](results/final/fig4_traces_combined.png) | Traces: combined degradation |
-| [fig5](results/final/fig5_traces_steer_map.png) | Traces: steering-map error |
-| [fig6](results/final/fig6_delay_robustness.png) | High-gain vs. robust MRAC under delay and noise |
-| [fig7](results/final/fig7_limit_failure.png) | Friction-limit failure |
+| ![error by scenario](results/final/fig1_error_by_scenario.png) | ![theta hat](results/final/fig3_theta_hat.png) |
+| ![combined traces](results/final/fig4_traces_combined.png) | ![steer map traces](results/final/fig5_traces_steer_map.png) |
+| ![delay robustness](results/final/fig6_delay_robustness.png) | ![friction limit](results/final/fig7_limit_failure.png) |
 
-Full tables: [`results/final/tables.md`](results/final/tables.md).
+</details>
 
-## Controllers
+## 🧠 How it works
 
-| Name in code | Label | Description |
-| --- | --- | --- |
-| `pure_pursuit` | Pure Pursuit | rear axle, look-ahead 0.35 v + 4 m (4–30 m) |
-| `stanley` | Stanley | front axle, k = 1.2, k_s = 1.0, no curvature feedforward |
-| `adaptive_mrac_cal` | high-gain MRAC | original design, θ̂₀ = 4.3 m |
-| `adaptive_mrac_rob` | **MRAC-R** | delay-robust MRAC (k_e = k_max = 2.0, filtered adaptation) |
-| `adaptive_mrac_rob_prev` | **MRAC-RP** | MRAC-R + 0.2 s curvature preview |
-| `*_fixed` | ablation | same controller with adaptation off (γ = 0, θ = 4.3 m) |
+```mermaid
+flowchart LR
+    R["🗺️ Town03 route<br/>GlobalRoutePlanner"] --> P["📐 Reference<br/>ψ, κ, speed profile"]
+    P --> PP["Pure Pursuit"]
+    P --> ST["Stanley"]
+    P --> MR["Direct MRAC<br/>learns θ̂ = 1/b"]
+    PP --> V["🚗 Tesla Model 3<br/>CARLA 0.9.16, 20 Hz sync"]
+    ST --> V
+    MR --> V
+    S["🌧️ 14 scenarios<br/>grip · load · delay · noise · steering map"] --> V
+    V -->|state| MR
+    V --> L["📊 logs → summary.csv → figures"]
+    classDef ctl fill:#2EC4B6,stroke:#0d1117,color:#0d1117;
+    classDef car fill:#FF9F1C,stroke:#0d1117,color:#0d1117;
+    classDef env fill:#4C9BE8,stroke:#0d1117,color:#ffffff;
+    class PP,ST,MR ctl
+    class V car
+    class R,P,S,L env
+```
 
-The adaptive law, in short (full derivation in [`docs/METHOD.md`](docs/METHOD.md)):
+<p align="center">
+  <img src="media/route_map.png" alt="Route map" width="90%">
+</p>
+
+The adaptive law in short (full derivation, robust redesign and grip calibration in
+[`docs/METHOD.md`](docs/METHOD.md)):
 
 $$s = e_\psi + \arctan(\lambda e_y),\qquad \nu = -k s - f,\qquad \tan\delta = \frac{\hat\theta\,\nu}{v},\qquad \dot{\hat\theta} = -\gamma\,s\,\nu$$
 
 $$V = \tfrac12 s^2 + \frac{b}{2\gamma}\tilde\theta^2 \ \Rightarrow\ \dot V = -k s^2 \le 0$$
 
-## Scenarios
+| Name in code | Label | Description |
+| --- | --- | --- |
+| `pure_pursuit` | 🔵 Pure Pursuit | rear axle, look-ahead 0.35 v + 4 m (4–30 m) |
+| `stanley` | 🟠 Stanley | front axle, k = 1.2, k_s = 1.0, no curvature feedforward |
+| `adaptive_mrac_cal` | 🔴 high-gain MRAC | original design, θ̂₀ = 4.3 m |
+| `adaptive_mrac_rob` | 🟢 **MRAC-R** | delay-robust MRAC (k_e = k_max = 2.0, filtered adaptation) |
+| `adaptive_mrac_rob_prev` | 🟢 **MRAC-RP** | MRAC-R + 0.2 s curvature preview |
+| `*_fixed` | ⚪ ablation | same controller with adaptation off (γ = 0, θ = 4.3 m) |
+
+<details>
+<summary><b>Scenarios</b></summary>
 
 | Group | Scenarios | What changes |
 | --- | --- | --- |
@@ -96,30 +188,11 @@ $$V = \tfrac12 s^2 + \frac{b}{2\gamma}\tilde\theta^2 \ \Rightarrow\ \dot V = -k 
 | Mixed | `combined` | grip × 0.55, mass × 1.4, steering curve on, noise, 100 ms delay |
 | Calibrated grip | `dry_real`, `dry_real_push` | measured μ ≈ 0.9, μ-aware speed profile |
 
-All runs share one 606 m Town03 reference (`results/reference_town03.npz`, spawn 174 → 15),
-one speed profile per scenario and the same PI speed loop, so controllers differ only in their
-steering law. Cross-track error is measured at the vehicle centre; heading error at the rear axle.
+All runs share one 606 m Town03 reference (spawn 174 → 15), one speed profile per scenario and the
+same PI speed loop, so controllers differ only in their steering law.
+</details>
 
-## Repository layout
-
-```
-├── config.py            simulator, route and limit settings
-├── vehicle_state.py     CARLA-free state containers and frame helpers
-├── sim_utils.py         the only CARLA-specific code: connect, spawn, physics, frame conversion
-├── reference_path.py    Town03 route -> smoothed path, curvature, speed profile, projection
-├── controllers.py       Pure Pursuit, Stanley, direct MRAC, speed PI, named PRESETS
-├── scenarios.py         the 16 scenario definitions (14 used in the study)
-├── run_experiments.py   runs scenario × controller, logs traces and results/summary.csv
-├── skidpad.py           flat OpenDRIVE pad: tire_friction -> measured lateral grip
-├── offline_check.py     CARLA-free kinematic simulation: signs and adaptation sanity check
-├── make_figures.py      final figures and tables -> results/final/
-├── analyze.py, diag.py  quick per-scenario plots; single-run diagnosis
-├── run_all.sh           reproduces every result
-├── docs/METHOD.md       conventions, derivation, robust redesign, grip calibration
-└── results/             summary.csv, reference route, final figures and tables
-```
-
-## Getting started
+## 🚀 Getting started
 
 Requirements: Ubuntu 22.04/24.04, CARLA 0.9.16 (UE4), Python 3.10–3.12.
 
@@ -133,40 +206,62 @@ export CARLA_ROOT=/path/to/CARLA_0.9.16          # for agents.navigation (route 
 python offline_check.py                           # no simulator needed
 ```
 
-Start the simulator in another terminal (`$CARLA_ROOT/CarlaUE4.sh -quality-level=Low`), then:
+Start the simulator (`$CARLA_ROOT/CarlaUE4.sh -quality-level=Low`), then:
 
 ```bash
 python run_experiments.py -c stanley adaptive_mrac_rob_prev -s nominal combined --spectator
-python make_figures.py
+python record_demo.py -s combined -c stanley adaptive_mrac_rob_prev     # your own demo video
 ```
 
-`run_experiments.py` options: `-c` controllers or presets, `-s` scenarios, `--gains` JSON
-overrides, `--tag` result-name suffix, `--noise-seed`, `--new-route`, `--spectator`.
-Use another port with `CARLA_PORT=4000` (and `-carla-rpc-port=4000` on the server).
+| Script | What it does |
+| --- | --- |
+| `run_experiments.py` | scenario × controller runs → `results/` (`-c`, `-s`, `--gains`, `--tag`, `--noise-seed`) |
+| `record_demo.py` | chase / top-down camera + HUD → MP4, side-by-side MP4 and GIF |
+| `skidpad.py` | flat OpenDRIVE pad: `tire_friction` → measured lateral grip |
+| `make_figures.py` · `make_animations.py` | analysis figures; banner, scoreboard, route map, animated GIFs |
+| `run_all.sh` · `make_media.sh` | reproduce every result (2–3 h) · every image and video (~20 min) |
+| `offline_check.py` · `diag.py` | CARLA-free sanity check · single-run diagnosis |
 
-**Reproduce everything** (about 110 runs, 2–3 hours): `./run_all.sh`.
+<details>
+<summary><b>Repository layout</b></summary>
 
-## Limitations
+```
+├── config.py            simulator, route and limit settings
+├── vehicle_state.py     CARLA-free state containers and frame helpers
+├── sim_utils.py         the only CARLA-specific code: connect, spawn, physics, frame conversion
+├── reference_path.py    Town03 route -> smoothed path, curvature, speed profile, projection
+├── controllers.py       Pure Pursuit, Stanley, direct MRAC, speed PI, named PRESETS
+├── scenarios.py         the 16 scenario definitions (14 used in the study)
+├── run_experiments.py   runs scenario x controller, logs traces and results/summary.csv
+├── record_demo.py       camera + HUD recordings, side-by-side videos and GIFs
+├── skidpad.py           tire_friction -> measured lateral grip
+├── make_figures.py      analysis figures and tables -> results/final/
+├── make_animations.py   banner, route map, scoreboard and animated GIFs -> media/
+├── docs/METHOD.md       conventions, derivation, robust redesign, grip calibration
+├── media/               images, GIFs and videos shown in this README
+└── results/             summary.csv, reference route, final figures and tables
+```
+</details>
 
-- **One route, one vehicle.** All results come from a single 606 m Town03 route.
-- **Simulator grip.** CARLA's default grip (≈ 2.2 g) is about twice a real car's, so the
-  default-relative "wet"/"icy" scenarios are relative friction reductions, not real roads.
-  Lowering `tire_friction` to realistic wet or snow values also removes cornering stiffness and
-  traction, and the car could not complete Town03; those scenarios are defined but excluded.
-- **Kinematic error model.** The MRAC assumes a kinematic bicycle; tyre slip is absorbed into θ̂.
-- **Friction limit.** The design assumes the steering gain stays positive, which fails past peak
-  tyre force; the controller needs saturation-aware handling there.
-- **Preview–adaptation interaction.** With curvature preview, θ̂ drifts below its calibrated
-  value on calm roads (3.84–4.01 m), making MRAC-RP's adaptation 20–28 % worse than holding θ̂
-  fixed there. A fix (adapting on the non-previewed error model) is untested in CARLA.
+## ⚠️ Limitations
 
-## Future work
+> [!WARNING]
+> - **One route, one vehicle**: all results come from a single 606 m Town03 route.
+> - **Simulator grip**: CARLA's default grip (≈ 2.2 g) is about twice a real car's, so "wet"/"icy"
+>   are relative friction reductions. Realistic wet and snow `tire_friction` also removes cornering
+>   stiffness and traction; the car could not complete Town03, so those scenarios are excluded.
+> - **Kinematic error model**: tyre slip is absorbed into θ̂ rather than modelled.
+> - **Friction limit**: the design assumes the steering gain stays positive, which fails past peak tyre force.
+> - **Preview–adaptation interaction**: with curvature preview, θ̂ drifts below its calibrated value on
+>   calm roads (3.84–4.01 m), making MRAC-RP's adaptation 20–28 % worse than holding θ̂ fixed there.
 
-Dynamic-bicycle error model with tyre slip · CARLA's Project Chrono vehicle dynamics for
-realistic low-grip roads · friction-limit-aware adaptation · μ-split and sudden ice patches
-(`static.trigger.friction`) to measure adaptation speed · multiple towns and routes · ROS 2 nodes.
+## 🔭 Future work
 
-## Author
+Dynamic-bicycle error model with tyre slip · CARLA's Project Chrono vehicle dynamics for realistic
+low-grip roads · friction-limit-aware adaptation · μ-split and sudden ice patches to measure
+adaptation speed · multiple towns and routes · ROS 2 nodes.
+
+## 👤 Author
 
 **Munavir Zaman P K** · [GitHub](https://github.com/munavirzaman-git) ·
 ORCID [0009-0001-4537-6234](https://orcid.org/0009-0001-4537-6234)
