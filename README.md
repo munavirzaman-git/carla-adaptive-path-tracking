@@ -81,7 +81,7 @@ adaptation worth it compared with well-tuned geometric and model-predictive cont
 | | Finding |
 | --- | --- |
 | 📈 | **Adaptation pays in proportion to plant change.** The error reduction from adapting correlates with how far θ̂ moved from its dry-road calibration (**r = −0.93** for MRAC-R over the 12 default-grip scenarios). The same pattern holds for adaptive MPC. |
-| 🧮 | **MPC is the strongest all-rounder.** Calibrated or adaptive MPC had the lowest RMS error in 9 of 14 scenarios; the QP solves in about 0.5 ms (worst case about 1.2 ms) with OSQP. |
+| 🧮 | **MPC is the strongest all-rounder.** Calibrated or adaptive MPC had the lowest RMS error in 9 of 14 scenarios; the QP solves in 0.52 ms on average with OSQP (worst case 3.1 ms, about 6 % of the 50 ms control period). |
 | 🎯 | **The physically correct gain can be the wrong one.** RLS correctly identified the yaw-rate gain (θ ≈ 3.36 m), but the MPC tracked best at θ ≈ 4.3 m (0.152 vs 0.080 m) because the kinematic model omits actuator and yaw lag. Calibrating the absolute value and adapting only the *relative* change fixed it. |
 | 🤝 | **Two independent estimators agree.** Under steering-map error, MRAC (from tracking error) reached θ̂ = 4.72 m and RLS (from yaw rate) 4.78 m. |
 | 🏆 | **Stanley wins when the car matches its calibration**: lowest error on nominal, heavy load, icy and noisy+delayed. |
