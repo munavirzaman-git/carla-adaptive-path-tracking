@@ -98,3 +98,57 @@ the plateau of v·r / g is the lateral grip μ_lat.
 | 0.04 | 0.14 | 0.21 |
 
 Below tire_friction ≈ 1, μ_lat ≈ 1.5 × tire_friction.
+
+## Model predictive control (MPC) and adaptive MPC
+
+The MPC uses the **same** rear-axle error model as the MRAC, so the two differ only in how they
+use it. With u = tan δ and the effective steering gain b = 1/θ, the exact zero-order-hold
+discretisation over Δt = 0.1 s, holding v over the horizon, is
+
+$$x_{k+1} = A x_k + B u_k + d_k,\quad
+A = \begin{bmatrix}1 & v\Delta t\\ 0 & 1\end{bmatrix},\
+B = \begin{bmatrix}\tfrac12 b v^2 \Delta t^2\\ b v \Delta t\end{bmatrix},\
+d_k = \begin{bmatrix}-\tfrac12 v^2 \kappa_k \Delta t^2\\ -v\kappa_k\Delta t\end{bmatrix}$$
+
+with x = (e_y, e_ψ) and κ_k the path curvature **previewed** at the stations the car will reach.
+Over N = 15 steps (1.5 s) it solves
+
+$$\min_{u}\ \sum_{k=1}^{N} x_k^\top Q x_k + r\,u_k^2 + r_\Delta (u_k - u_{k-1})^2
+\quad \text{s.t.}\quad |u_k| \le \tan\delta_{\max},\ |u_k - u_{k-1}| \le \Delta u_{\max}$$
+
+(terminal weight 5Q), condensed to a 15-variable QP and solved with **OSQP** in about 0.4 ms.
+
+**Delay compensation.** An assumed actuator delay of 0.1 s is handled by propagating the measured
+error state forward through the commands already sent but not yet acting, then optimising from the
+predicted state. Without it, 150 ms of delay plus sensor noise made the MPC oscillate
+(offline: 1.07 m RMS); with it, 0.16 m.
+
+**Adaptive MPC (indirect adaptation).** A scalar recursive-least-squares estimator identifies b
+from the measured yaw rate, r = b · v tan δ, using the command currently acting on the car,
+low-pass filtering both sides (0.3 s), a forgetting factor of 0.995, and updating only with enough
+excitation (|v tan δ| > 0.04 rad/s). The MPC model is updated with b̂ every step
+(certainty equivalence).
+
+| | Direct MRAC | Adaptive MPC |
+| --- | --- | --- |
+| What adapts | the controller gain θ̂ directly | the model parameter b̂, then the controller re-optimises |
+| Learning signal | tracking error s | yaw-rate prediction error |
+| Guarantee | Lyapunov: V̇ = −k s² ≤ 0 | certainty equivalence (no closed-loop proof here) |
+| Constraints | saturation only | steering and steering-rate limits in the optimisation |
+| Preview | optional 0.2 s curvature preview | full 1.5 s curvature preview |
+
+### Calibration versus adaptation: what CARLA showed
+
+On the nominal road, plain RLS adaptation (`ampc_cal`) drifted from θ̂ = 4.3 to 3.36 m and made
+tracking worse (0.128 vs 0.080 m). A sweep of the fixed MPC model gain explained why:
+
+| θ in the MPC model [m] | 3.0 | 3.36 (RLS, from yaw rate) | 3.8 | 4.3 | 5.0 |
+| --- | --- | --- | --- | --- | --- |
+| RMS e_y, nominal [m] | 0.197 | 0.152 | 0.110 | **0.080** | 0.082 |
+
+The yaw-rate gain the RLS identifies is physically correct, but the tracking-optimal model gain is
+larger: the kinematic model omits CARLA's steering and yaw lag, and a larger θ (firmer steering)
+compensates for it. **`ampc_ratio`** therefore keeps the calibrated absolute value and adapts only
+the relative change, θ_model = 4.3 · θ̂_RLS / 3.36. Result: no drift on nominal (0.083 m), and the
+best controller under steering-map error (0.111 m, vs 0.131 m fixed MPC and 0.206 m Stanley), where
+the RLS (θ ≈ 4.78 m) and the independent MRAC (4.72 m) agree on how much the steering weakened.

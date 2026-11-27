@@ -20,12 +20,15 @@ CTRL = {  # label in files -> display name, colour
     "adaptive_mrac_rob": ("MRAC-R", "#55A868"),
     "adaptive_mrac_rob_prev": ("MRAC-RP", "#2E7D32"),
     "adaptive_mrac_cal": ("MRAC high-gain", "#C44E52"),
+    "mpc_cal": ("MPC", "#8172B3"),
+    "ampc_ratio": ("Adaptive MPC", "#DA8BC3"),
 }
-MAIN = ["pure_pursuit", "stanley", "adaptive_mrac_rob", "adaptive_mrac_rob_prev"]
+MAIN = ["pure_pursuit", "stanley", "adaptive_mrac_rob", "adaptive_mrac_rob_prev", "mpc_cal", "ampc_ratio"]
 SCEN = ["nominal", "wet_matched", "icy_matched", "heavy_load", "wet", "icy", "high_speed", "dry_push",
         "noisy_delayed", "steer_map_error", "icy_push", "combined", "dry_real", "dry_real_push"]
 PAIRS = [("adaptive_mrac_rob", "adaptive_mrac_rob_fixed", "MRAC-R", "o"),
-         ("adaptive_mrac_rob_prev", "adaptive_mrac_rob_prev_fixed", "MRAC-RP", "s")]
+         ("adaptive_mrac_rob_prev", "adaptive_mrac_rob_prev_fixed", "MRAC-RP", "s"),
+         ("ampc_ratio", "mpc_cal", "Adaptive MPC", "^")]
 
 plt.rcParams.update({"font.size": 10, "axes.grid": True, "grid.alpha": 0.3, "savefig.dpi": 200,
                      "savefig.bbox": "tight"})
@@ -51,13 +54,13 @@ def fig_rms_bars(d):
                 off.append(len(r) and r.status.iloc[0] != "completed")
             vals = np.array(vals, dtype=float)
             shown = np.minimum(vals, 1.0 if metric == "rms_ey" else 3.0)
-            bars = ax.bar(x + (k - 1.5) * w, shown, w, label=name, color=col)
+            bars = ax.bar(x + (k - (len(MAIN) - 1) / 2) * w, shown, w, label=name, color=col)
             for b, o in zip(bars, off):
                 if o:
                     b.set_hatch("xx"); b.set_edgecolor("k")
                     ax.text(b.get_x() + b.get_width() / 2, b.get_height(), "off", ha="center", va="bottom", fontsize=7)
         ax.set_ylabel(lab)
-    axes[0].legend(ncol=4, loc="upper left")
+    axes[0].legend(ncol=len(MAIN), loc="upper left", fontsize=8)
     axes[1].set_xticks(x)
     axes[1].set_xticklabels(scen, rotation=30, ha="right")
     axes[0].set_title("Tracking error by scenario (hatched = left the road)")

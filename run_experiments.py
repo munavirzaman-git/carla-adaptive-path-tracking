@@ -28,7 +28,7 @@ from sim_utils import (configure_physics, connect, delta_to_carla_steer, draw_pa
 from vehicle_state import with_pose, wrap
 
 FIELDS = ["t", "s", "x", "y", "v", "v_ref", "e_y", "e_y_rear", "e_psi_deg",
-          "delta_deg", "steer", "ay", "theta", "sigma"]
+          "delta_deg", "steer", "ay", "theta", "sigma", "solve_ms"]
 
 
 def get_reference(world, args):
@@ -91,7 +91,8 @@ def run_one(world, path, ctrl_name, sc, rng, spectator=False, gains=None, hook=N
             rows.append(dict(t=t, s=path.s[idx_t], x=st.x, y=st.y, v=st.v, v_ref=vprof[idx_m],
                              e_y=e_y, e_y_rear=e_y_rear, e_psi_deg=math.degrees(e_psi),
                              delta_deg=math.degrees(delta_applied), steer=steer, ay=st.ay,
-                             theta=info.get("theta", np.nan), sigma=info.get("sigma", np.nan)))
+                             theta=info.get("theta", np.nan), sigma=info.get("sigma", np.nan),
+                             solve_ms=info.get("solve_ms", np.nan)))
             if spectator:
                 follow_spectator(world, veh)
             if hook is not None and hook(veh, st, rows[-1], info):
@@ -123,6 +124,8 @@ def summarize(rows, status, path, ctrl_name, sc):
         rms_speed_err=np.sqrt(np.mean((a["v"] - a["v_ref"]) ** 2)),
         max_abs_ay=np.max(np.abs(a["ay"])),
         final_theta=a["theta"][-1],
+        mean_solve_ms=np.nanmean(a["solve_ms"]) if np.isfinite(a["solve_ms"]).any() else np.nan,
+        max_solve_ms=np.nanmax(a["solve_ms"]) if np.isfinite(a["solve_ms"]).any() else np.nan,
     )
 
 

@@ -20,12 +20,14 @@ OUT = "media"
 GIFS = os.path.join(OUT, "gifs")
 BG, PANEL, GRID, TXT, SUB = "#0d1117", "#161b22", "#30363d", "#e6edf3", "#8b949e"
 COL = {"pure_pursuit": "#4C9BE8", "stanley": "#FF9F1C", "adaptive_mrac_rob": "#2EC4B6",
-       "adaptive_mrac_rob_prev": "#7BD389", "adaptive_mrac_cal": "#FF5E78"}
+       "adaptive_mrac_rob_prev": "#7BD389", "adaptive_mrac_cal": "#FF5E78",
+       "mpc_cal": "#B392F0", "ampc_ratio": "#F778BA"}
 NAME = {"pure_pursuit": "Pure Pursuit", "stanley": "Stanley", "adaptive_mrac_rob": "MRAC-R",
-        "adaptive_mrac_rob_prev": "MRAC-RP", "adaptive_mrac_cal": "high-gain MRAC"}
+        "adaptive_mrac_rob_prev": "MRAC-RP", "adaptive_mrac_cal": "high-gain MRAC",
+        "mpc_cal": "MPC", "ampc_ratio": "Adaptive MPC"}
 SCEN = ["nominal", "wet_matched", "icy_matched", "heavy_load", "wet", "icy", "high_speed", "dry_push",
         "noisy_delayed", "steer_map_error", "icy_push", "combined", "dry_real", "dry_real_push"]
-MAIN = ["pure_pursuit", "stanley", "adaptive_mrac_rob", "adaptive_mrac_rob_prev"]
+MAIN = ["pure_pursuit", "stanley", "adaptive_mrac_rob", "adaptive_mrac_rob_prev", "mpc_cal", "ampc_ratio"]
 
 
 def run(sc, ctrl):
@@ -109,7 +111,7 @@ def scoreboard():
     ratio = val / np.nanmin(np.where(stat == "completed", val, np.nan), axis=1, keepdims=True)
     ratio = np.where(stat == "completed", ratio, 4.0)
     ratio = np.where(np.isnan(val), np.nan, ratio)
-    fig, ax = plt.subplots(figsize=(9, 8.5), facecolor=BG)
+    fig, ax = plt.subplots(figsize=(12, 8.5), facecolor=BG)
     dark(ax, grid=False)
     cmap = plt.get_cmap("RdYlGn_r").copy(); cmap.set_bad(PANEL)
     im = ax.imshow(np.ma.masked_invalid(np.clip(ratio, 1, 4)), cmap=cmap, vmin=1, vmax=3.5, aspect="auto")
