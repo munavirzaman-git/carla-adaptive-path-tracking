@@ -28,9 +28,11 @@ from sim_utils import connect, draw_path, enable_sync, load_town
 NAME = {"pure_pursuit": "Pure Pursuit", "stanley": "Stanley", "adaptive_mrac": "MRAC (nominal)",
         "adaptive_mrac_cal": "High-gain MRAC", "adaptive_mrac_cal_fixed": "High-gain MRAC, fixed",
         "adaptive_mrac_rob": "MRAC-R", "adaptive_mrac_rob_fixed": "MRAC-R, fixed gain",
-        "adaptive_mrac_rob_prev": "MRAC-RP", "adaptive_mrac_rob_prev_fixed": "MRAC-RP, fixed gain"}
+        "adaptive_mrac_rob_prev": "MRAC-RP", "adaptive_mrac_rob_prev_fixed": "MRAC-RP, fixed gain",
+        "mpc_cal": "MPC", "ampc_ratio": "Adaptive MPC", "ampc_cal": "Adaptive MPC (abs.)"}
 COLOR = {"pure_pursuit": (76, 155, 232), "stanley": (255, 159, 28), "adaptive_mrac_cal": (255, 94, 120),
-         "adaptive_mrac_rob": (46, 196, 182), "adaptive_mrac_rob_prev": (123, 211, 137)}
+         "adaptive_mrac_rob": (46, 196, 182), "adaptive_mrac_rob_prev": (123, 211, 137),
+         "mpc_cal": (179, 146, 240), "ampc_ratio": (247, 120, 186)}
 VIEWS = {"chase": carla.Transform(carla.Location(x=-7.5, z=3.0), carla.Rotation(pitch=-12.0)),
          "top": carla.Transform(carla.Location(z=32.0), carla.Rotation(pitch=-90.0))}
 

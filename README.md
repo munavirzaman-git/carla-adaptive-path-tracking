@@ -52,7 +52,7 @@ adaptation worth it compared with well-tuned geometric and model-predictive cont
   </tr>
   <tr>
     <td width="50%"><img src="media/gifs/steer_map_error_chase_side_by_side.gif" alt="steering-map error"><br>
-      <sub>🟢 <b>Unknown steering gain</b>: CARLA's speed-dependent steering reduction. MRAC-R learns it; Stanley's error triples relative to nominal.</sub></td>
+      <sub>🟢 <b>Unknown steering gain</b>: CARLA's speed-dependent steering reduction. Adaptive MPC learns it (watch θ̂ rise in the HUD) and cuts Stanley's error by 46 %.</sub></td>
     <td width="50%"><img src="media/gifs/adaptation.gif" alt="theta adaptation"><br>
       <sub>📈 <b>What the adaptation learns</b>: θ̂ climbs where the car turns less than calibrated.</sub></td>
   </tr>
@@ -64,7 +64,7 @@ adaptation worth it compared with well-tuned geometric and model-predictive cont
 | Scenario | View | Side by side | Individual runs |
 | --- | --- | --- | --- |
 | combined | chase | [▶ video](media/videos/combined_chase_side_by_side.mp4) | [Stanley](media/videos/combined_chase_stanley.mp4) · [MRAC-RP](media/videos/combined_chase_adaptive_mrac_rob_prev.mp4) |
-| steer_map_error | chase | [▶ video](media/videos/steer_map_error_chase_side_by_side.mp4) | [Stanley](media/videos/steer_map_error_chase_stanley.mp4) · [MRAC-R](media/videos/steer_map_error_chase_adaptive_mrac_rob.mp4) |
+| steer_map_error | chase | [▶ video](media/videos/steer_map_error_chase_side_by_side.mp4) | [Stanley](media/videos/steer_map_error_chase_stanley.mp4) · [Adaptive MPC](media/videos/steer_map_error_chase_ampc_ratio.mp4) · [MRAC-R](media/videos/steer_map_error_chase_adaptive_mrac_rob.mp4) |
 | noisy_delayed | chase | [▶ video](media/videos/noisy_delayed_chase_side_by_side.mp4) | [high-gain MRAC](media/videos/noisy_delayed_chase_adaptive_mrac_cal.mp4) · [MRAC-R](media/videos/noisy_delayed_chase_adaptive_mrac_rob.mp4) |
 | dry_real_push | top | [▶ video](media/videos/dry_real_push_top_side_by_side.mp4) | [Stanley](media/videos/dry_real_push_top_stanley.mp4) · [MRAC-RP](media/videos/dry_real_push_top_adaptive_mrac_rob_prev.mp4) |
 | nominal | top | – | [MRAC-RP](media/videos/nominal_top_adaptive_mrac_rob_prev.mp4) |
